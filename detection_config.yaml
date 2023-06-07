@@ -1,0 +1,32 @@
+YOLO_NAS:
+  YOLO_NAS_WEIGHTS: 'yolo_nas_m'
+INPUT:
+  FOLDER: 'D:/INTEIA/Videos/Proyectos/Ruta_Costera/'
+  # FILE: 'PTZ010'
+  FILE: 'CAR021'
+  # FILE: 'OP030'
+
+  # FOLDER: 'D:/INTEIA/Videos/DEEP_CCTV/'
+  # FILE: '20230412_CCTV_Barrio_Triste'
+
+  # FOLDER: 'D:/INTEIA/Videos/Aforo_Bus/'
+  # FILE: 'sgtcootransvi.dyndns.org_01_2023051112113649'
+  # FILE: 'sgtcootransvi.dyndns.org_01_20230511120030951'
+  # FILE: 'sgtcootransvi.dyndns.org_01_20230511120254332'
+  # FILE: 'sgtcootransvi.dyndns.org_01_20230511121459931'
+
+  # FOLDER: = 'D:/INTEIA/Videos/PPE/'
+  # FILE: = 'test'
+
+DETECTION:
+  CLASS_FILTER: [0,1,2,3,5,7]
+  # CLASS_FILTER: [0]
+  # CLASS_FILTER: [0,1]
+SHOW:
+  BOXES: True
+  LABELS: True
+  TRACKS: True
+SAVE:
+  VIDEO: True
+  CSV: True
+  
