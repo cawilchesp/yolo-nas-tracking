@@ -135,8 +135,9 @@ def main():
     
     # Initialize YOLO-NAS Model
     device = torch.device('cuda:0')
+    yolo_nas_config = detection_config['YOLO_NAS']
     model = models.get(
-            model_name=detection_config['YOLO_NAS']['YOLO_NAS_WEIGHTS'],
+            model_name=yolo_nas_config['YOLO_NAS_WEIGHTS'],
             pretrained_weights='coco'
         ).to(device)
     
@@ -156,7 +157,7 @@ def main():
     frame_count = int(cap.get(cv2.CAP_PROP_FRAME_COUNT))
 
     # Output
-    output_file_name = f"{input_config['FOLDER']}{input_config['FILE']}/output_{input_config['FILE']}_{detection_config['YOLO_NAS']['YOLO_NAS_WEIGHTS']}_tracking"
+    output_file_name = f"{input_config['FOLDER']}{input_config['FILE']}/output_{input_config['FILE']}_{yolo_nas_config['YOLO_NAS_WEIGHTS']}_tracking"
     
     video_writer_flag = False
     if detection_config['SAVE']['VIDEO']:
@@ -202,8 +203,7 @@ def main():
         if detection_config['SHOW']['BOXES']: draw_boxes(image, ds_output)
         if detection_config['SHOW']['LABELS']: draw_label(image, ds_output)
         if detection_config['SHOW']['TRACKS']: draw_trajectories(image, ds_output)
-        if detection_config['SAVE']['CSV']: write_csv(output_file_name, ds_output, frame_number)
-
+        
         # Increase frame number
         print(f'Progress: {frame_number}/{frame_count}, Inference time: {t2-t1:.2f} s')
         frame_number += 1
@@ -212,7 +212,7 @@ def main():
         cv2.imshow('source', image)
 
         # Save in CSV
-        if detection_config['SAVE']['CSV']: write_csv(output_file_name, boxes, confidences, class_ids, class_names, frame_number)
+        if detection_config['SAVE']['CSV']: write_csv(output_file_name, ds_output, frame_number)
 
         # Save video
         if video_writer_flag: video_writer.write(image)
