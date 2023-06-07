@@ -5,6 +5,7 @@ import torch
 import numpy as np
 import yaml
 import time
+from collections import deque
 
 from deep_sort_pytorch.utils.parser import get_config
 from deep_sort_pytorch.deep_sort import DeepSort
@@ -23,6 +24,19 @@ def time_synchronized():
         torch.cuda.synchronize()
     return time.time()
 
+
+def xyxy2xywh(x):
+    """
+    Convert nx4 boxes from [x1, y1, x2, y2] to [x, y, w, h]
+    where xy1=top-left, xy2=bottom-right
+    """
+    y = x.clone() if isinstance(x, torch.Tensor) else np.copy(x)
+    y[:, 0] = (x[:, 0] + x[:, 2]) / 2  # x center
+    y[:, 1] = (x[:, 1] + x[:, 3]) / 2  # y center
+    y[:, 2] = x[:, 2] - x[:, 0]  # width
+    y[:, 3] = x[:, 3] - x[:, 1]  # height
+    
+    return y
 
 
 def draw_boxes(image: np.array, ds_output: np.array) -> None:
@@ -162,36 +176,34 @@ def main():
         detections = list(model.predict(image))[0]
         t2 = time_synchronized()
         
+        global class_names
         class_names = detections.class_names
-        boxes = detections.prediction.bboxes_xyxy.tolist()
-        confidences = detections.prediction.confidence.tolist()
-        class_ids = detections.prediction.labels.astype(int).tolist()
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+        tensor_boxes = torch.from_numpy(detections.prediction.bboxes_xyxy)
+        tensor_confidences = torch.from_numpy(detections.prediction.confidence)
+        tensor_class_ids = torch.from_numpy(detections.prediction.labels.astype(int))
         
+        # Non-Maximum Suppression
+        sorted_confidences, indices = torch.sort(tensor_confidences, descending=True)
+        sorted_boxes = tensor_boxes[indices]
+        sorted_class_ids = tensor_class_ids[indices]
 
+        nms_indices = torch.ops.torchvision.nms(sorted_boxes, sorted_confidences, 0.5)
+        nms_boxes = sorted_boxes[nms_indices]
+        nms_confidences = sorted_confidences[nms_indices]
+        nms_class_ids = sorted_class_ids[nms_indices]
+
+        nms_boxes_xywh = xyxy2xywh(nms_boxes)
+
+        # Deep SORT tracking
+        ds_output = deepsort.update(nms_boxes_xywh, nms_confidences, nms_class_ids, image)
+        
         # Visualization
-        if detection_config['SHOW']['BOXES']: draw_boxes(image, boxes, class_ids)
-        if detection_config['SHOW']['LABELS']: draw_label(image, boxes, confidences, class_ids, class_names)
-        
+        if detection_config['SHOW']['BOXES']: draw_boxes(image, ds_output)
+        if detection_config['SHOW']['LABELS']: draw_label(image, ds_output)
+        if detection_config['SHOW']['TRACKS']: draw_trajectories(image, ds_output)
+        if detection_config['SAVE']['CSV']: write_csv(output_file_name, ds_output, frame_number)
+
         # Increase frame number
         print(f'Progress: {frame_number}/{frame_count}, Inference time: {t2-t1:.2f} s')
         frame_number += 1
@@ -216,6 +228,9 @@ if __name__ == "__main__":
     # Initialize Configuration File
     with open('detection_config.yaml', 'r') as file:
         detection_config = yaml.safe_load(file)
+
+    # object tracks
+    track_deque = {}
 
     with torch.no_grad():
         main()
