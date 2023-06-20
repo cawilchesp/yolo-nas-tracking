@@ -144,7 +144,7 @@ def main():
     # Initialize Input
     input_config = detection_config['INPUT']
 
-    cap = cv2.VideoCapture(f"{input_config['FOLDER']}{input_config['FILE']}.avi")
+    cap = cv2.VideoCapture(f"{input_config['FOLDER']}{input_config['FILE']}.mp4")
     if not cap.isOpened():
         raise RuntimeError('Cannot open source')
     
@@ -164,7 +164,7 @@ def main():
         video_writer_flag = True
         video_writer = cv2.VideoWriter(f'{output_file_name}.mp4', cv2.VideoWriter_fourcc(*fourcc), fps, (w, h))
     
-    # Run YOLOv8 inference
+    # Run YOLO-NAS inference
     print('***             Video Processing Start             ***')
     frame_number = 0
 
